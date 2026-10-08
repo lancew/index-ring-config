@@ -69,7 +69,7 @@
        and the Nenya API. It is stored on your phone, not on this page.</p>
   </div>
 
-  <p class="hint" style="text-align:center;margin-top:18px">Config page v8 <span id="rt"></span></p>
+  <p class="hint" style="text-align:center;margin-top:18px">Config page v9 <span id="rt"></span></p>
 
 <script>
 (function () {
@@ -84,11 +84,10 @@
     return m ? m[1] : '';
   }
 
-  // The API key is supplied by the app from the PBW (single source of truth).
-  // It is the public Firebase Web API key, not a secret. Fallback keeps this
-  // page usable standalone.
-  var FALLBACK_API_KEY = 'AIzaSyBZ9Cdvwwv9At2lPmc8TxyyEqSXGXejGvc';
-  var API_KEY = decodeURIComponent(param('apiKey') || '') || FALLBACK_API_KEY;
+  // The Firebase Web API key is supplied by the app from the PBW (single source
+  // of truth; it is public and not a secret). Opened standalone there is no key,
+  // so the custom-token exchange is unavailable and we say so.
+  var API_KEY = param('apiKey') ? decodeURIComponent(param('apiKey')) : '';
   var SIGN_IN_URL = 'https://identitytoolkit.googleapis.com/v1/accounts:signInWithCustomToken?key=' + API_KEY;
 
   // The phone appends return_to=<url>; navigating there closes the webview and
@@ -175,6 +174,7 @@
     if (parsed.kind === 'empty') { setStatus(saveStatus, 'Paste a token first.', 'err'); return; }
     if (parsed.kind === 'error') { setStatus(saveStatus, parsed.message, 'err'); return; }
     if (parsed.kind === 'refresh') { setStatus(saveStatus, 'Saving…', ''); finish({ refreshToken: parsed.value }); return; }
+    if (!API_KEY) { setStatus(saveStatus, 'Open this from the Pebble app to convert a custom token.', 'err'); return; }
     btn.disabled = true;
     setStatus(saveStatus, 'Signing in…', '');
     xhr('POST', SIGN_IN_URL, { token: parsed.value, returnSecureToken: true }).then(function (data) {
