@@ -2,92 +2,51 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="color-scheme" content="dark">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Index Ring Settings</title>
 <style>
-  :root { --bg:#0d0d0f; --card:#17171b; --fg:#f2f2f4; --muted:#a0a0ab; --accent:#31d17e; --err:#ff6b6b; --border:#2a2a31; }
-  * { box-sizing: border-box; }
-  html, body { margin: 0; }
-  body { font: 16px/1.5 -apple-system, system-ui, "Segoe UI", Roboto, sans-serif;
-         background: var(--bg); color: var(--fg); padding: 16px;
-         padding-bottom: calc(16px + env(safe-area-inset-bottom)); }
-  h1 { font-size: 20px; margin: 0 0 4px; }
-  h2 { font-size: 15px; margin: 22px 0 8px; color: var(--muted); font-weight: 600;
-       text-transform: uppercase; letter-spacing: .04em; }
-  p, li { color: var(--muted); }
-  .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px;
-          padding: 14px; margin: 12px 0; }
-  button { font: inherit; font-weight: 600; border: 0; border-radius: 10px; padding: 14px 16px;
-           width: 100%; margin: 8px 0; background: var(--accent); color: #04120a; }
-  button.secondary { background: transparent; color: var(--fg); border: 1px solid var(--border); }
-  button:disabled { opacity: .5; }
-  textarea { width: 100%; min-height: 92px; padding: 12px; font: 14px/1.4 ui-monospace, monospace;
-             background: #000; color: #7dffb0; border: 1px solid var(--border); border-radius: 10px;
-             resize: vertical; }
-  code { color: #8fd0ff; word-break: break-all; font-size: 14px; }
-  .status { font-size: 15px; min-height: 22px; margin-top: 8px; }
-  .ok { color: var(--accent); }
-  .err { color: var(--err); }
-  .banner { background: #06331f; border: 1px solid #0a5; color: #bff5d6; border-radius: 10px;
-            padding: 10px 12px; font-size: 14px; margin: 0 0 12px; }
-  details { border-top: 1px solid var(--border); padding-top: 12px; margin-top: 12px; }
-  summary { cursor: pointer; color: var(--fg); font-weight: 600; }
-  .spinner { display:inline-block; width:14px; height:14px; border:2px solid #04120a55;
-             border-top-color:#04120a; border-radius:50%; animation:spin .8s linear infinite;
-             vertical-align:-2px; margin-right:8px; }
-  @keyframes spin { to { transform: rotate(360deg); } }
+  html, body { margin: 0; background: #111318; }
+  body { color: #f2f2f4; padding: 16px; font-family: -apple-system, system-ui, "Segoe UI", Roboto, Arial, sans-serif; font-size: 16px; line-height: 1.5; }
+  h1 { font-size: 20px; margin: 0 0 4px; color: #ffffff; }
+  h2 { font-size: 14px; margin: 24px 0 8px; color: #9aa0aa; text-transform: uppercase; letter-spacing: .04em; }
+  p, li { color: #c7ccd6; }
+  .card { background: #1b1e26; border: 1px solid #2b303b; border-radius: 12px; padding: 14px; margin: 12px 0; }
+  button { display: block; width: 100%; font-size: 16px; font-weight: 700; border: 0; border-radius: 10px; padding: 14px 16px; margin: 8px 0; background: #22c56b; color: #06120b; }
+  button.sec { background: #2b303b; color: #f2f2f4; }
+  textarea { width: 100%; min-height: 90px; padding: 12px; font-size: 14px; font-family: ui-monospace, Menlo, Consolas, monospace; background: #0b0d11; color: #7dffb0; border: 1px solid #2b303b; border-radius: 10px; }
+  code { color: #7fb8ff; word-break: break-all; }
+  .status { font-size: 15px; min-height: 20px; }
+  .ok { color: #2fe083; }
+  .err { color: #ff7b7b; }
+  .banner { background: #123a26; border: 1px solid #1c7a4a; color: #c9f7dd; border-radius: 10px; padding: 10px 12px; font-size: 14px; }
 </style>
 </head>
 <body>
   <h1>Index Ring</h1>
   <p>Connect the watch app to your Index account.</p>
 
-  <div class="banner" id="configured" style="display:none">
-    A token is already set up on this phone. Connecting again will replace it.
-  </div>
-
   <div class="card">
-    <h2 style="margin-top:0">Option 1 — get it automatically</h2>
-    <p>If you're signed in to <code>index.rebble.com</code> in this browser, we can fetch your
-       token for you.</p>
+    <h2 style="margin-top:0">1. Automatic</h2>
+    <p>If you're signed in to <code>index.rebble.com</code> in this browser, tap below.</p>
     <button id="auto">Get token from Rebble</button>
     <p class="status" id="autoStatus"></p>
   </div>
 
   <div class="card">
-    <h2 style="margin-top:0">Option 2 — paste a token</h2>
-    <p>Paste any of these and we'll sort it out:</p>
-    <ul>
-      <li>a <strong>refreshToken</strong> (starts with <code>AMf-</code>)</li>
-      <li>a <strong>custom token</strong> (a long <code>eyJ…</code> value from Rebble)</li>
-      <li>the whole <code>credentials.json</code> or <code>{"customToken":"…"}</code> block</li>
-    </ul>
-    <textarea id="token" placeholder="AMf-…  or  eyJ…  or  { &quot;refreshToken&quot;: &quot;…&quot; }"
-              autocapitalize="off" autocorrect="off" spellcheck="false"></textarea>
+    <h2 style="margin-top:0">2. Paste a token</h2>
+    <p>Paste a refreshToken (<code>AMf-…</code>), a custom token (<code>eyJ…</code>), or your whole credentials.json.</p>
+    <textarea id="token" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="AMf-...  or  eyJ..."></textarea>
     <button id="save">Save</button>
     <p class="status" id="saveStatus"></p>
   </div>
 
   <div class="card">
-    <details>
-      <summary>How to get a token on a phone</summary>
-      <p style="margin-bottom:6px">A refreshToken is issued by Index after you sign in. On a phone you
-         can get one like this:</p>
-      <ol>
-        <li>Open <code>index.rebble.com</code> in your browser and sign in with Google.</li>
-        <li>Open this settings page again (from the Pebble app) and tap
-            <strong>Get token from Rebble</strong>.</li>
-      </ol>
-      <p>If that doesn't work on your phone, sign in on a computer and grab the
-         <code>refreshToken</code> from <code>~/.config/pebble-pebble-index/credentials.json</code>
-         (or run <code>node src/cli/auth.mjs</code>), then paste it in Option 2.</p>
-      <p><strong>Privacy:</strong> your token is only sent to Google's token endpoint and the Nenya
-         API. It is stored on your phone, never on this page.</p>
-    </details>
+    <p style="margin:0"><strong>Privacy:</strong> your token is only sent to Google's sign-in endpoint
+       and the Nenya API. It is stored on your phone, not on this page.</p>
   </div>
 
 <script>
+(function () {
   var API_KEY = 'AIzaSyBZ9Cdvwwv9At2lPmc8TxyyEqSXGXejGvc';
   var CUSTOM_TOKEN_URL = 'https://index.rebble.com/api/auth/firebase/custom-token';
   var SIGN_IN_URL = 'https://identitytoolkit.googleapis.com/v1/accounts:signInWithCustomToken?key=' + API_KEY;
@@ -98,106 +57,80 @@
 
   function setStatus(el, msg, cls) { el.textContent = msg; el.className = 'status ' + (cls || ''); }
 
-  function param(name) {
-    var m = new RegExp('[?&]' + name + '=([^&]*)').exec(location.search);
-    return m ? m[1] : '';
+  function xhr(method, url, body, withCredentials) {
+    return new Promise(function (resolve, reject) {
+      var req = new XMLHttpRequest();
+      req.open(method, url, true);
+      if (withCredentials) req.withCredentials = true;
+      req.onload = function () {
+        var data = {};
+        try { data = JSON.parse(req.responseText); } catch (e) {}
+        if (req.status >= 200 && req.status < 300) resolve(data);
+        else reject(new Error((data.error && data.error.message) || ('HTTP ' + req.status)));
+      };
+      req.onerror = function () { reject(new Error('network error')); };
+      if (body) { req.setRequestHeader('Content-Type', 'application/json'); req.send(JSON.stringify(body)); }
+      else req.send();
+    });
   }
-  if (param('configured') === '1') document.getElementById('configured').style.display = 'block';
 
-  function looksLikeJwt(s) { return /^eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+/.test(s); }
+  function finish(refreshToken) {
+    document.location = 'pebblejs://close#' + encodeURIComponent(JSON.stringify({ refreshToken: refreshToken }));
+  }
 
-  // Work out what the user pasted and what we should hand back to the watch.
   function classify(raw) {
-    var s = String(raw || '').trim();
+    var s = String(raw || '').replace(/^\s+|\s+$/g, '');
     if (!s) return { kind: 'empty' };
     if (s.charAt(0) === '{') {
       var o;
       try { o = JSON.parse(s); } catch (e) { return { kind: 'error', message: 'That JSON could not be parsed.' }; }
       if (o.refreshToken) return { kind: 'refresh', value: o.refreshToken };
       if (o.customToken) return { kind: 'custom', value: o.customToken };
-      if (o.idToken) return { kind: 'error', message: 'That looks like an idToken (short-lived). Paste a refreshToken or a custom token instead.' };
-      return { kind: 'error', message: 'No refreshToken or customToken found in that JSON.' };
+      return { kind: 'error', message: 'No refreshToken or customToken in that JSON.' };
     }
-    if (s.indexOf('AMf-') === 0) return { kind: 'refresh', value: s };
-    if (looksLikeJwt(s)) return { kind: 'custom', value: s };
-    // Unknown shape: treat as a refreshToken (the phone will try it).
-    return { kind: 'refresh', value: s, unsure: true };
+    if (/^eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+/.test(s)) return { kind: 'custom', value: s };
+    return { kind: 'refresh', value: s };
   }
 
-  function exchangeCustomToken(customToken) {
-    return fetch(SIGN_IN_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ token: customToken, returnSecureToken: true })
-    }).then(function (res) {
-      return res.json().then(function (data) {
-        if (!res.ok) throw new Error((data.error && data.error.message) || ('sign-in failed (' + res.status + ')'));
-        if (!data.refreshToken) throw new Error('sign-in returned no refreshToken');
-        return data.refreshToken;
-      });
+  document.getElementById('auto').onclick = function () {
+    var btn = this; btn.disabled = true;
+    setStatus(autoStatus, 'Checking Rebble...', '');
+    xhr('GET', CUSTOM_TOKEN_URL, null, true).then(function (data) {
+      if (!data || !data.customToken) throw new Error('not-signed-in');
+      setStatus(autoStatus, 'Signing in...', '');
+      return xhr('POST', SIGN_IN_URL, { token: data.customToken, returnSecureToken: true });
+    }).then(function (data) {
+      if (!data || !data.refreshToken) throw new Error('no refreshToken returned');
+      setStatus(autoStatus, 'Got it. Closing...', 'ok');
+      finish(data.refreshToken);
+    })['catch'](function (err) {
+      btn.disabled = false;
+      var m = String((err && err.message) || err);
+      if (m === 'not-signed-in' || m === 'network error')
+        setStatus(autoStatus, "Couldn't read a Rebble session here. Sign in to index.rebble.com in this browser, or paste a token below.", 'err');
+      else
+        setStatus(autoStatus, 'Failed: ' + m + '. Paste a token below.', 'err');
     });
-  }
+  };
 
-  function finish(refreshToken) {
-    var payload = JSON.stringify({ refreshToken: refreshToken });
-    document.location = 'pebblejs://close#' + encodeURIComponent(payload);
-  }
-
-  // Option 1: fetch a custom token from Rebble (needs an existing session there).
-  document.getElementById('auto').addEventListener('click', function () {
-    var btn = this;
-    btn.disabled = true;
-    setStatus(autoStatus, 'Checking Rebble…', '');
-    fetch(CUSTOM_TOKEN_URL, { credentials: 'include' })
-      .then(function (res) {
-        if (!res.ok) throw new Error('not-signed-in');
-        return res.json();
-      })
-      .then(function (data) {
-        if (!data || !data.customToken) throw new Error('not-signed-in');
-        setStatus(autoStatus, 'Signing in…', '');
-        return exchangeCustomToken(data.customToken);
-      })
-      .then(function (refreshToken) {
-        setStatus(autoStatus, 'Got it — closing…', 'ok');
-        finish(refreshToken);
-      })
-      .catch(function (err) {
-        btn.disabled = false;
-        var msg = String(err && err.message || err);
-        if (msg === 'not-signed-in' || msg === 'Failed to fetch')
-          setStatus(autoStatus, "Couldn't read your Rebble session on this phone. Sign in to index.rebble.com in this browser, then try again — or paste a token below.", 'err');
-        else
-          setStatus(autoStatus, 'Failed: ' + msg + '. Try pasting a token below.', 'err');
-      });
-  });
-
-  // Option 2: paste a token (refresh, custom token, or JSON).
-  document.getElementById('save').addEventListener('click', function () {
+  document.getElementById('save').onclick = function () {
     var btn = this;
     var parsed = classify(tokenEl.value);
     if (parsed.kind === 'empty') { setStatus(saveStatus, 'Paste a token first.', 'err'); return; }
     if (parsed.kind === 'error') { setStatus(saveStatus, parsed.message, 'err'); return; }
-
-    if (parsed.kind === 'refresh') {
-      setStatus(saveStatus, parsed.unsure ? 'Saving… (checking)' : 'Saving…', '');
-      finish(parsed.value);
-      return;
-    }
-
-    // custom token -> exchange for a refreshToken first
+    if (parsed.kind === 'refresh') { setStatus(saveStatus, 'Saving...', ''); finish(parsed.value); return; }
     btn.disabled = true;
-    setStatus(saveStatus, 'Signing in…', '');
-    exchangeCustomToken(parsed.value)
-      .then(function (refreshToken) {
-        setStatus(saveStatus, 'Got it — closing…', 'ok');
-        finish(refreshToken);
-      })
-      .catch(function (err) {
-        btn.disabled = false;
-        setStatus(saveStatus, 'Could not use that token: ' + (err.message || err) + '. Paste a refreshToken instead.', 'err');
-      });
-  });
+    setStatus(saveStatus, 'Signing in...', '');
+    xhr('POST', SIGN_IN_URL, { token: parsed.value, returnSecureToken: true }).then(function (data) {
+      if (!data || !data.refreshToken) throw new Error('no refreshToken returned');
+      setStatus(saveStatus, 'Got it. Closing...', 'ok');
+      finish(data.refreshToken);
+    })['catch'](function (err) {
+      btn.disabled = false;
+      setStatus(saveStatus, 'Could not use that token: ' + ((err && err.message) || err), 'err');
+    });
+  };
+})();
 </script>
 </body>
 </html>
