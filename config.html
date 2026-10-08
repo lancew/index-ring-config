@@ -8,17 +8,17 @@
   html, body { margin: 0; background: #111318; }
   body { color: #f2f2f4; padding: 16px; font-family: -apple-system, system-ui, "Segoe UI", Roboto, Arial, sans-serif; font-size: 16px; line-height: 1.5; }
   h1 { font-size: 20px; margin: 0 0 4px; color: #ffffff; }
-  h2 { font-size: 14px; margin: 24px 0 8px; color: #9aa0aa; text-transform: uppercase; letter-spacing: .04em; }
+  h2 { font-size: 15px; margin: 0 0 8px; color: #ffffff; }
   p, li { color: #c7ccd6; }
   .card { background: #1b1e26; border: 1px solid #2b303b; border-radius: 12px; padding: 14px; margin: 12px 0; }
   button { display: block; width: 100%; font-size: 16px; font-weight: 700; border: 0; border-radius: 10px; padding: 14px 16px; margin: 8px 0; background: #22c56b; color: #06120b; }
-  button.sec { background: #2b303b; color: #f2f2f4; }
-  textarea { width: 100%; min-height: 90px; padding: 12px; font-size: 14px; font-family: ui-monospace, Menlo, Consolas, monospace; background: #0b0d11; color: #7dffb0; border: 1px solid #2b303b; border-radius: 10px; }
+  textarea { width: 100%; box-sizing: border-box; min-height: 90px; padding: 12px; font-size: 14px; font-family: ui-monospace, Menlo, Consolas, monospace; background: #0b0d11; color: #7dffb0; border: 1px solid #2b303b; border-radius: 10px; }
   code { color: #7fb8ff; word-break: break-all; }
+  a { color: #7fb8ff; }
+  ol { padding-left: 20px; }
   .status { font-size: 15px; min-height: 20px; }
   .ok { color: #2fe083; }
   .err { color: #ff7b7b; }
-  .banner { background: #123a26; border: 1px solid #1c7a4a; color: #c9f7dd; border-radius: 10px; padding: 10px 12px; font-size: 14px; }
 </style>
 </head>
 <body>
@@ -26,18 +26,37 @@
   <p>Connect the watch app to your Index account.</p>
 
   <div class="card">
-    <h2 style="margin-top:0">1. Automatic</h2>
-    <p>If you're signed in to <code>index.rebble.com</code> in this browser, tap below.</p>
-    <button id="auto">Get token from Rebble</button>
-    <p class="status" id="autoStatus"></p>
+    <h2>Paste your token</h2>
+    <p>Paste any of these and tap Save:</p>
+    <ul>
+      <li>a <strong>refreshToken</strong> (starts with <code>AMf-</code>)</li>
+      <li>a <strong>custom token</strong> (a long <code>eyJ…</code> value from Rebble)</li>
+      <li>your whole <code>credentials.json</code>, or a <code>{"customToken":"…"}</code> block</li>
+    </ul>
+    <textarea id="token" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="AMf-...   or   eyJ..."></textarea>
+    <button id="save">Save</button>
+    <p class="status" id="saveStatus"></p>
   </div>
 
   <div class="card">
-    <h2 style="margin-top:0">2. Paste a token</h2>
-    <p>Paste a refreshToken (<code>AMf-…</code>), a custom token (<code>eyJ…</code>), or your whole credentials.json.</p>
-    <textarea id="token" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="AMf-...  or  eyJ..."></textarea>
-    <button id="save">Save</button>
-    <p class="status" id="saveStatus"></p>
+    <h2>How to get a token on your phone</h2>
+    <ol>
+      <li>Open <code>index.rebble.com</code> in your <strong>normal browser</strong> (not this screen) and sign in with Google.</li>
+      <li>Go to <code>index.rebble.com/api/auth/firebase/custom-token</code> — it shows JSON.
+          Copy the value between the quotes after <code>"customToken":</code>.</li>
+      <li>Come back here and paste it above, then tap Save.</li>
+    </ol>
+    <p>Or, if you have a <strong>refreshToken</strong> already (e.g. from
+       <code>~/.config/pebble-pebble-index/credentials.json</code> on your computer), just paste that.</p>
+  </div>
+
+  <div class="card" id="autoCard">
+    <h2>Get it automatically (desktop only)</h2>
+    <p>This screen runs in its own little browser inside the Pebble app, so it can't see your
+       <code>index.rebble.com</code> sign-in. It only works if you're signed in <em>in this same
+       screen</em>, which phones normally can't do.</p>
+    <button id="auto">Try anyway</button>
+    <p class="status" id="autoStatus"></p>
   </div>
 
   <div class="card">
@@ -92,27 +111,6 @@
     return { kind: 'refresh', value: s };
   }
 
-  document.getElementById('auto').onclick = function () {
-    var btn = this; btn.disabled = true;
-    setStatus(autoStatus, 'Checking Rebble...', '');
-    xhr('GET', CUSTOM_TOKEN_URL, null, true).then(function (data) {
-      if (!data || !data.customToken) throw new Error('not-signed-in');
-      setStatus(autoStatus, 'Signing in...', '');
-      return xhr('POST', SIGN_IN_URL, { token: data.customToken, returnSecureToken: true });
-    }).then(function (data) {
-      if (!data || !data.refreshToken) throw new Error('no refreshToken returned');
-      setStatus(autoStatus, 'Got it. Closing...', 'ok');
-      finish(data.refreshToken);
-    })['catch'](function (err) {
-      btn.disabled = false;
-      var m = String((err && err.message) || err);
-      if (m === 'not-signed-in' || m === 'network error')
-        setStatus(autoStatus, "Couldn't read a Rebble session here. Sign in to index.rebble.com in this browser, or paste a token below.", 'err');
-      else
-        setStatus(autoStatus, 'Failed: ' + m + '. Paste a token below.', 'err');
-    });
-  };
-
   document.getElementById('save').onclick = function () {
     var btn = this;
     var parsed = classify(tokenEl.value);
@@ -128,6 +126,27 @@
     })['catch'](function (err) {
       btn.disabled = false;
       setStatus(saveStatus, 'Could not use that token: ' + ((err && err.message) || err), 'err');
+    });
+  };
+
+  document.getElementById('auto').onclick = function () {
+    var btn = this; btn.disabled = true;
+    setStatus(autoStatus, 'Checking...', '');
+    xhr('GET', CUSTOM_TOKEN_URL, null, true).then(function (data) {
+      if (!data || !data.customToken) throw new Error('no-session');
+      setStatus(autoStatus, 'Signing in...', '');
+      return xhr('POST', SIGN_IN_URL, { token: data.customToken, returnSecureToken: true });
+    }).then(function (data) {
+      if (!data || !data.refreshToken) throw new Error('no refreshToken returned');
+      setStatus(autoStatus, 'Got it. Closing...', 'ok');
+      finish(data.refreshToken);
+    })['catch'](function (err) {
+      btn.disabled = false;
+      var m = String((err && err.message) || err);
+      if (m === 'no-session' || m === 'network error')
+        setStatus(autoStatus, "No Rebble sign-in found in this screen (expected on a phone). Use the method above.", 'err');
+      else
+        setStatus(autoStatus, 'Failed: ' + m, 'err');
     });
   };
 })();
