@@ -11,8 +11,13 @@
   h2 { font-size: 15px; margin: 0 0 8px; color: #ffffff; }
   p, li { color: #c7ccd6; }
   .card { background: #1b1e26; border: 1px solid #2b303b; border-radius: 12px; padding: 14px; margin: 12px 0; }
+  .state { display: flex; align-items: center; gap: 10px; font-size: 15px; }
+  .dot { width: 10px; height: 10px; border-radius: 50%; background: #666; flex: 0 0 auto; }
+  .dot.on { background: #2fe083; }
+  .dot.off { background: #ff9b5b; }
   button { display: block; width: 100%; font-size: 16px; font-weight: 700; border: 0; border-radius: 10px; padding: 14px 16px; margin: 8px 0; background: #22c56b; color: #06120b; }
   button.sec { background: #2b303b; color: #f2f2f4; }
+  button.danger { background: #3a1c1f; color: #ff8a8a; border: 1px solid #5a2a30; }
   textarea { width: 100%; box-sizing: border-box; min-height: 90px; padding: 12px; font-size: 14px; font-family: ui-monospace, Menlo, Consolas, monospace; background: #0b0d11; color: #7dffb0; border: 1px solid #2b303b; border-radius: 10px; }
   pre { background: #0b0d11; border: 1px solid #2b303b; border-radius: 10px; padding: 10px; overflow-x: auto; color: #9fd0ff; font-size: 13px; }
   code { color: #9fd0ff; word-break: break-all; }
@@ -26,7 +31,12 @@
 </head>
 <body>
   <h1>Index Ring</h1>
-  <p>Connect the watch app to your Index account by pasting a token below.</p>
+
+  <div class="card">
+    <div class="state"><span class="dot" id="dot"></span><span id="stateText">Checking…</span></div>
+    <p class="status" id="stateStatus"></p>
+    <button class="danger" id="delete" style="display:none">Delete stored token</button>
+  </div>
 
   <div class="card">
     <h2>Paste your token</h2>
@@ -52,12 +62,6 @@
     <p class="hint">Opening <code>index.rebble.com/api/auth/firebase/custom-token</code> directly
        in a tab does <em>not</em> work — the endpoint only answers a signed-in request made from the
        index.rebble.com page itself, which is exactly what the console line above does.</p>
-
-    <p style="margin-top:14px"><strong>Already set up on your computer?</strong> If you've run
-       <code>node src/cli/auth.mjs</code>, your refreshToken is in
-       <code>~/.config/pebble-pebble-index/credentials.json</code> — just copy that
-       <code>refreshToken</code> value to your phone and paste it above.</p>
-    <p class="hint">Get it onto the phone however is easy (email it to yourself, a notes app, etc.).</p>
   </div>
 
   <div class="card">
@@ -65,7 +69,7 @@
        and the Nenya API. It is stored on your phone, not on this page.</p>
   </div>
 
-  <p class="hint" style="text-align:center;margin-top:18px">Config page v6</p>
+  <p class="hint" style="text-align:center;margin-top:18px">Config page v7 <span id="rt"></span></p>
 
 <script>
 (function () {
@@ -75,8 +79,29 @@
 
   var tokenEl = document.getElementById('token');
   var saveStatus = document.getElementById('saveStatus');
+  var stateStatus = document.getElementById('stateStatus');
+
+  function param(name) {
+    var m = new RegExp('[?&]' + name + '=([^&]*)').exec(location.search);
+    return m ? m[1] : '';
+  }
+
+  // The phone appends return_to=<url>; navigating there closes the webview and
+  // delivers the result. pebblejs://close is the fallback for older setups.
+  var RETURN_TO = decodeURIComponent(param('return_to') || '');
+  document.getElementById('rt').textContent = RETURN_TO ? '· return_to ok' : '· no return_to';
 
   function setStatus(el, msg, cls) { el.textContent = msg; el.className = 'status ' + (cls || ''); }
+
+  function finish(obj) {
+    var payload = encodeURIComponent(JSON.stringify(obj));
+    if (RETURN_TO) {
+      var sep = RETURN_TO.indexOf('?') >= 0 ? '' : '?';
+      document.location = RETURN_TO + sep + payload;
+    } else {
+      document.location = 'pebblejs://close#' + payload;
+    }
+  }
 
   function xhr(method, url, body) {
     return new Promise(function (resolve, reject) {
@@ -94,10 +119,6 @@
     });
   }
 
-  function finish(refreshToken) {
-    document.location = 'pebblejs://close#' + encodeURIComponent(JSON.stringify({ refreshToken: refreshToken }));
-  }
-
   function classify(raw) {
     var s = String(raw || '').replace(/^\s+|\s+$/g, '');
     if (!s) return { kind: 'empty' };
@@ -112,12 +133,28 @@
     return { kind: 'refresh', value: s };
   }
 
+  // Indicator: configured=1/0 comes from the app.
+  var configured = param('configured') === '1';
+  var dot = document.getElementById('dot');
+  if (configured) {
+    dot.className = 'dot on';
+    document.getElementById('stateText').textContent = 'A token is set up on this phone.';
+    document.getElementById('delete').style.display = 'block';
+  } else {
+    dot.className = 'dot off';
+    document.getElementById('stateText').textContent = 'No token set up yet.';
+  }
+
+  document.getElementById('delete').onclick = function () {
+    setStatus(stateStatus, 'Deleting…', '');
+    finish({ delete: true });
+  };
+
   document.getElementById('copySnippet').onclick = function () {
     var b = this;
     try {
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(SNIPPET);
-      } else {
+      if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(SNIPPET);
+      else {
         var t = document.createElement('textarea');
         t.value = SNIPPET; document.body.appendChild(t); t.select();
         document.execCommand('copy'); document.body.removeChild(t);
@@ -132,13 +169,13 @@
     var parsed = classify(tokenEl.value);
     if (parsed.kind === 'empty') { setStatus(saveStatus, 'Paste a token first.', 'err'); return; }
     if (parsed.kind === 'error') { setStatus(saveStatus, parsed.message, 'err'); return; }
-    if (parsed.kind === 'refresh') { setStatus(saveStatus, 'Saving...', ''); finish(parsed.value); return; }
+    if (parsed.kind === 'refresh') { setStatus(saveStatus, 'Saving…', ''); finish({ refreshToken: parsed.value }); return; }
     btn.disabled = true;
-    setStatus(saveStatus, 'Signing in...', '');
+    setStatus(saveStatus, 'Signing in…', '');
     xhr('POST', SIGN_IN_URL, { token: parsed.value, returnSecureToken: true }).then(function (data) {
       if (!data || !data.refreshToken) throw new Error('no refreshToken returned');
-      setStatus(saveStatus, 'Got it. Closing...', 'ok');
-      finish(data.refreshToken);
+      setStatus(saveStatus, 'Got it. Closing…', 'ok');
+      finish({ refreshToken: data.refreshToken });
     })['catch'](function (err) {
       btn.disabled = false;
       setStatus(saveStatus, 'Could not use that token: ' + ((err && err.message) || err), 'err');
