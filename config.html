@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Index Ring Settings</title>
+<style>
+  :root { color-scheme: dark; }
+  body { font-family: -apple-system, system-ui, sans-serif; margin: 0; padding: 16px;
+         background: #111; color: #eee; }
+  h1 { font-size: 18px; margin: 0 0 4px; }
+  p { color: #aaa; font-size: 14px; line-height: 1.4; }
+  ol { color: #aaa; font-size: 14px; line-height: 1.5; padding-left: 18px; }
+  label { display: block; margin: 16px 0 6px; font-size: 14px; }
+  textarea { width: 100%; box-sizing: border-box; padding: 10px; font-size: 14px;
+             background: #000; color: #0f0; border: 1px solid #444; border-radius: 6px;
+             font-family: ui-monospace, monospace; min-height: 96px; resize: vertical; }
+  button { margin-top: 16px; width: 100%; padding: 12px; font-size: 16px; border: 0;
+           border-radius: 6px; background: #2d7; color: #012; font-weight: 600; }
+  code { color: #9cf; word-break: break-all; }
+  #status { font-size: 14px; min-height: 18px; }
+  .ok { color: #2d7; }
+  .err { color: #f77; }
+  .banner { background: #063; color: #cfc; padding: 8px 10px; border-radius: 6px; font-size: 13px; }
+</style>
+</head>
+<body>
+  <h1>Index Ring</h1>
+  <p>Paste your Nenya <strong>refreshToken</strong> below. It is stored on this phone and used
+     only to fetch short-lived sign-in tokens from Google's token endpoint. It is not sent
+     anywhere else.</p>
+
+  <p class="banner" id="configured" style="display:none">A token is already configured on this
+     phone. Pasting a new one will replace it.</p>
+
+  <label for="token">Firebase refreshToken</label>
+  <textarea id="token" placeholder="AMf-vB..." spellcheck="false" autocomplete="off"
+            autocapitalize="off"></textarea>
+  <button type="button" id="save">Save</button>
+  <p id="status"></p>
+
+  <p>How to get one:</p>
+  <ol>
+    <li>Sign in at <code>index.repebble.com</code> in your browser.</li>
+    <li>In the project terminal run <code>node src/cli/auth.mjs</code>, or open
+        <code>~/.config/pebble-pebble-index/credentials.json</code> and copy the
+        <code>refreshToken</code> value.</li>
+    <li>Paste it above and press Save.</li>
+  </ol>
+
+  <script>
+    function param(name) {
+      var m = new RegExp('[?&]' + name + '=([^&]*)').exec(location.search);
+      return m ? m[1] : '';
+    }
+
+    var tokenEl = document.getElementById('token');
+    var statusEl = document.getElementById('status');
+    if (param('configured') === '1')
+      document.getElementById('configured').style.display = 'block';
+
+    document.getElementById('save').addEventListener('click', function () {
+      var token = tokenEl.value.trim();
+      if (!token) {
+        statusEl.textContent = 'Please paste a refreshToken first.';
+        statusEl.className = 'err';
+        return;
+      }
+      // Hand the value back to PebbleKit JS, then close the webview.
+      var payload = JSON.stringify({ refreshToken: token });
+      document.location = 'pebblejs://close#' + encodeURIComponent(payload);
+      statusEl.textContent = 'Saved.';
+      statusEl.className = 'ok';
+    });
+  </script>
+</body>
+</html>
