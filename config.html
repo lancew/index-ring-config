@@ -14,6 +14,7 @@
   button { display: block; width: 100%; font-size: 16px; font-weight: 700; border: 0; border-radius: 10px; padding: 14px 16px; margin: 8px 0; background: #22c56b; color: #06120b; }
   button.sec { background: #2b303b; color: #f2f2f4; }
   textarea { width: 100%; box-sizing: border-box; min-height: 90px; padding: 12px; font-size: 14px; font-family: ui-monospace, Menlo, Consolas, monospace; background: #0b0d11; color: #7dffb0; border: 1px solid #2b303b; border-radius: 10px; }
+  pre { background: #0b0d11; border: 1px solid #2b303b; border-radius: 10px; padding: 10px; overflow-x: auto; color: #9fd0ff; font-size: 13px; }
   code { color: #9fd0ff; word-break: break-all; }
   a { color: #6fb6ff; word-break: break-all; }
   ol { padding-left: 20px; }
@@ -29,33 +30,34 @@
 
   <div class="card">
     <h2>Paste your token</h2>
-    <textarea id="token" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="AMf-...   or   eyJ..."></textarea>
+    <textarea id="token" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="AMf-...   or   eyJ...   or   {&quot;customToken&quot;:&quot;...&quot;}"></textarea>
     <button id="save">Save</button>
     <p class="status" id="saveStatus"></p>
     <p class="hint">Accepts a <code>refreshToken</code> (starts with <code>AMf-</code>), a
-       <code>customToken</code> (a long <code>eyJ…</code>), or your whole
-       <code>credentials.json</code>.</p>
+       <code>customToken</code> (a long <code>eyJ…</code>), or the JSON they come in.</p>
   </div>
 
   <div class="card">
-    <h2>Where to get a token</h2>
-    <p><strong>Easiest — from your computer.</strong> You already have a refreshToken in
-       <code>~/.config/pebble-pebble-index/credentials.json</code> (or run
-       <code>node src/cli/auth.mjs</code>). Copy the <code>refreshToken</code> value, get it
-       onto your phone (email, notes, etc.), and paste it above.</p>
-    <p style="margin-bottom:4px"><strong>On the phone.</strong> This screen runs inside the Pebble
-       app and can't see your browser sign-in, so do this in your <em>normal</em> browser:</p>
+    <h2>How to get a token</h2>
+    <p><strong>Most reliable — on a computer.</strong></p>
     <ol>
-      <li>Open <a href="https://index.rebble.com" target="_blank" rel="noopener">index.rebble.com</a>
-          and sign in with Google.</li>
-      <li>Then open
-          <a href="https://index.rebble.com/api/auth/firebase/custom-token" target="_blank" rel="noopener">index.rebble.com/api/auth/firebase/custom-token</a>.
-          It shows JSON: copy the text after <code>"customToken":</code> (inside the quotes).</li>
-      <li>Paste that here and tap Save.</li>
+      <li>Sign in at <a href="https://index.rebble.com" target="_blank" rel="noopener">index.rebble.com</a>.</li>
+      <li>Open the browser's DevTools console (F12 → Console) and run this line. Copy what it prints
+          (it will look like <code>{"customToken":"eyJ…"}</code>):
+          <pre>fetch('/api/auth/firebase/custom-token',{credentials:'include'}).then(r=>r.text()).then(t=>console.log(t))</pre>
+        <button class="sec" id="copySnippet">Copy that line</button>
+      </li>
+      <li>Paste the printed value into the box above and tap Save.</li>
     </ol>
-    <p class="hint">If step 2 shows a blank page or downloads a file, you're probably not signed in
-       yet — do step 1 first, in the same browser. Some phones need you to open the link, then use
-       "Request desktop site" once.</p>
+    <p class="hint">Opening <code>index.rebble.com/api/auth/firebase/custom-token</code> directly
+       in a tab does <em>not</em> work — the endpoint only answers a signed-in request made from the
+       index.rebble.com page itself, which is exactly what the console line above does.</p>
+
+    <p style="margin-top:14px"><strong>Already set up on your computer?</strong> If you've run
+       <code>node src/cli/auth.mjs</code>, your refreshToken is in
+       <code>~/.config/pebble-pebble-index/credentials.json</code> — just copy that
+       <code>refreshToken</code> value to your phone and paste it above.</p>
+    <p class="hint">Get it onto the phone however is easy (email it to yourself, a notes app, etc.).</p>
   </div>
 
   <div class="card">
@@ -67,6 +69,7 @@
 (function () {
   var API_KEY = 'AIzaSyBZ9Cdvwwv9At2lPmc8TxyyEqSXGXejGvc';
   var SIGN_IN_URL = 'https://identitytoolkit.googleapis.com/v1/accounts:signInWithCustomToken?key=' + API_KEY;
+  var SNIPPET = "fetch('/api/auth/firebase/custom-token',{credentials:'include'}).then(r=>r.text()).then(t=>console.log(t))";
 
   var tokenEl = document.getElementById('token');
   var saveStatus = document.getElementById('saveStatus');
@@ -106,6 +109,21 @@
     if (/^eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+/.test(s)) return { kind: 'custom', value: s };
     return { kind: 'refresh', value: s };
   }
+
+  document.getElementById('copySnippet').onclick = function () {
+    var b = this;
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(SNIPPET);
+      } else {
+        var t = document.createElement('textarea');
+        t.value = SNIPPET; document.body.appendChild(t); t.select();
+        document.execCommand('copy'); document.body.removeChild(t);
+      }
+      b.textContent = 'Copied';
+      setTimeout(function () { b.textContent = 'Copy that line'; }, 1500);
+    } catch (e) { b.textContent = 'Copy failed — select it manually'; }
+  };
 
   document.getElementById('save').onclick = function () {
     var btn = this;
