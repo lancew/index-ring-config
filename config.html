@@ -69,12 +69,10 @@
        and the Nenya API. It is stored on your phone, not on this page.</p>
   </div>
 
-  <p class="hint" style="text-align:center;margin-top:18px">Config page v7 <span id="rt"></span></p>
+  <p class="hint" style="text-align:center;margin-top:18px">Config page v8 <span id="rt"></span></p>
 
 <script>
 (function () {
-  var API_KEY = 'AIzaSyBZ9Cdvwwv9At2lPmc8TxyyEqSXGXejGvc';
-  var SIGN_IN_URL = 'https://identitytoolkit.googleapis.com/v1/accounts:signInWithCustomToken?key=' + API_KEY;
   var SNIPPET = "fetch('/api/auth/firebase/custom-token',{credentials:'include'}).then(r=>r.text()).then(t=>console.log(t))";
 
   var tokenEl = document.getElementById('token');
@@ -85,6 +83,13 @@
     var m = new RegExp('[?&]' + name + '=([^&]*)').exec(location.search);
     return m ? m[1] : '';
   }
+
+  // The API key is supplied by the app from the PBW (single source of truth).
+  // It is the public Firebase Web API key, not a secret. Fallback keeps this
+  // page usable standalone.
+  var FALLBACK_API_KEY = 'AIzaSyBZ9Cdvwwv9At2lPmc8TxyyEqSXGXejGvc';
+  var API_KEY = decodeURIComponent(param('apiKey') || '') || FALLBACK_API_KEY;
+  var SIGN_IN_URL = 'https://identitytoolkit.googleapis.com/v1/accounts:signInWithCustomToken?key=' + API_KEY;
 
   // The phone appends return_to=<url>; navigating there closes the webview and
   // delivers the result. pebblejs://close is the fallback for older setups.
