@@ -12,51 +12,50 @@
   p, li { color: #c7ccd6; }
   .card { background: #1b1e26; border: 1px solid #2b303b; border-radius: 12px; padding: 14px; margin: 12px 0; }
   button { display: block; width: 100%; font-size: 16px; font-weight: 700; border: 0; border-radius: 10px; padding: 14px 16px; margin: 8px 0; background: #22c56b; color: #06120b; }
+  button.sec { background: #2b303b; color: #f2f2f4; }
   textarea { width: 100%; box-sizing: border-box; min-height: 90px; padding: 12px; font-size: 14px; font-family: ui-monospace, Menlo, Consolas, monospace; background: #0b0d11; color: #7dffb0; border: 1px solid #2b303b; border-radius: 10px; }
-  code { color: #7fb8ff; word-break: break-all; }
-  a { color: #7fb8ff; }
+  code { color: #9fd0ff; word-break: break-all; }
+  a { color: #6fb6ff; word-break: break-all; }
   ol { padding-left: 20px; }
   .status { font-size: 15px; min-height: 20px; }
   .ok { color: #2fe083; }
   .err { color: #ff7b7b; }
+  .hint { color: #9aa0aa; font-size: 14px; }
 </style>
 </head>
 <body>
   <h1>Index Ring</h1>
-  <p>Connect the watch app to your Index account.</p>
+  <p>Connect the watch app to your Index account by pasting a token below.</p>
 
   <div class="card">
     <h2>Paste your token</h2>
-    <p>Paste any of these and tap Save:</p>
-    <ul>
-      <li>a <strong>refreshToken</strong> (starts with <code>AMf-</code>)</li>
-      <li>a <strong>custom token</strong> (a long <code>eyJ…</code> value from Rebble)</li>
-      <li>your whole <code>credentials.json</code>, or a <code>{"customToken":"…"}</code> block</li>
-    </ul>
     <textarea id="token" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="AMf-...   or   eyJ..."></textarea>
     <button id="save">Save</button>
     <p class="status" id="saveStatus"></p>
+    <p class="hint">Accepts a <code>refreshToken</code> (starts with <code>AMf-</code>), a
+       <code>customToken</code> (a long <code>eyJ…</code>), or your whole
+       <code>credentials.json</code>.</p>
   </div>
 
   <div class="card">
-    <h2>How to get a token on your phone</h2>
+    <h2>Where to get a token</h2>
+    <p><strong>Easiest — from your computer.</strong> You already have a refreshToken in
+       <code>~/.config/pebble-pebble-index/credentials.json</code> (or run
+       <code>node src/cli/auth.mjs</code>). Copy the <code>refreshToken</code> value, get it
+       onto your phone (email, notes, etc.), and paste it above.</p>
+    <p style="margin-bottom:4px"><strong>On the phone.</strong> This screen runs inside the Pebble
+       app and can't see your browser sign-in, so do this in your <em>normal</em> browser:</p>
     <ol>
-      <li>Open <code>index.rebble.com</code> in your <strong>normal browser</strong> (not this screen) and sign in with Google.</li>
-      <li>Go to <code>index.rebble.com/api/auth/firebase/custom-token</code> — it shows JSON.
-          Copy the value between the quotes after <code>"customToken":</code>.</li>
-      <li>Come back here and paste it above, then tap Save.</li>
+      <li>Open <a href="https://index.rebble.com" target="_blank" rel="noopener">index.rebble.com</a>
+          and sign in with Google.</li>
+      <li>Then open
+          <a href="https://index.rebble.com/api/auth/firebase/custom-token" target="_blank" rel="noopener">index.rebble.com/api/auth/firebase/custom-token</a>.
+          It shows JSON: copy the text after <code>"customToken":</code> (inside the quotes).</li>
+      <li>Paste that here and tap Save.</li>
     </ol>
-    <p>Or, if you have a <strong>refreshToken</strong> already (e.g. from
-       <code>~/.config/pebble-pebble-index/credentials.json</code> on your computer), just paste that.</p>
-  </div>
-
-  <div class="card" id="autoCard">
-    <h2>Get it automatically (desktop only)</h2>
-    <p>This screen runs in its own little browser inside the Pebble app, so it can't see your
-       <code>index.rebble.com</code> sign-in. It only works if you're signed in <em>in this same
-       screen</em>, which phones normally can't do.</p>
-    <button id="auto">Try anyway</button>
-    <p class="status" id="autoStatus"></p>
+    <p class="hint">If step 2 shows a blank page or downloads a file, you're probably not signed in
+       yet — do step 1 first, in the same browser. Some phones need you to open the link, then use
+       "Request desktop site" once.</p>
   </div>
 
   <div class="card">
@@ -67,20 +66,17 @@
 <script>
 (function () {
   var API_KEY = 'AIzaSyBZ9Cdvwwv9At2lPmc8TxyyEqSXGXejGvc';
-  var CUSTOM_TOKEN_URL = 'https://index.rebble.com/api/auth/firebase/custom-token';
   var SIGN_IN_URL = 'https://identitytoolkit.googleapis.com/v1/accounts:signInWithCustomToken?key=' + API_KEY;
 
   var tokenEl = document.getElementById('token');
   var saveStatus = document.getElementById('saveStatus');
-  var autoStatus = document.getElementById('autoStatus');
 
   function setStatus(el, msg, cls) { el.textContent = msg; el.className = 'status ' + (cls || ''); }
 
-  function xhr(method, url, body, withCredentials) {
+  function xhr(method, url, body) {
     return new Promise(function (resolve, reject) {
       var req = new XMLHttpRequest();
       req.open(method, url, true);
-      if (withCredentials) req.withCredentials = true;
       req.onload = function () {
         var data = {};
         try { data = JSON.parse(req.responseText); } catch (e) {}
@@ -88,8 +84,8 @@
         else reject(new Error((data.error && data.error.message) || ('HTTP ' + req.status)));
       };
       req.onerror = function () { reject(new Error('network error')); };
-      if (body) { req.setRequestHeader('Content-Type', 'application/json'); req.send(JSON.stringify(body)); }
-      else req.send();
+      req.setRequestHeader('Content-Type', 'application/json');
+      req.send(JSON.stringify(body));
     });
   }
 
@@ -126,27 +122,6 @@
     })['catch'](function (err) {
       btn.disabled = false;
       setStatus(saveStatus, 'Could not use that token: ' + ((err && err.message) || err), 'err');
-    });
-  };
-
-  document.getElementById('auto').onclick = function () {
-    var btn = this; btn.disabled = true;
-    setStatus(autoStatus, 'Checking...', '');
-    xhr('GET', CUSTOM_TOKEN_URL, null, true).then(function (data) {
-      if (!data || !data.customToken) throw new Error('no-session');
-      setStatus(autoStatus, 'Signing in...', '');
-      return xhr('POST', SIGN_IN_URL, { token: data.customToken, returnSecureToken: true });
-    }).then(function (data) {
-      if (!data || !data.refreshToken) throw new Error('no refreshToken returned');
-      setStatus(autoStatus, 'Got it. Closing...', 'ok');
-      finish(data.refreshToken);
-    })['catch'](function (err) {
-      btn.disabled = false;
-      var m = String((err && err.message) || err);
-      if (m === 'no-session' || m === 'network error')
-        setStatus(autoStatus, "No Rebble sign-in found in this screen (expected on a phone). Use the method above.", 'err');
-      else
-        setStatus(autoStatus, 'Failed: ' + m, 'err');
     });
   };
 })();
